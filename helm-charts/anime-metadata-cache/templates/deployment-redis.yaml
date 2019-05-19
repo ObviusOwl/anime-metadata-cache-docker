@@ -1,0 +1,57 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: '{{ include "anime-metadata-cache.fullname" . }}-redis'
+  labels:
+    app: {{ include "anime-metadata-cache.name" . }}
+    component: redis
+    chart: {{ include "anime-metadata-cache.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "anime-metadata-cache.name" . }}
+      component: redis
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "anime-metadata-cache.name" . }}
+        component: redis
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: "{{ .Chart.Name }}-redis"
+          image: "{{ .Values.redis.image.repository }}:{{ .Values.redis.image.tag }}"
+          imagePullPolicy: {{ .Values.redis.image.pullPolicy }}
+          ports:
+            - name: redis
+              containerPort: 6379
+              protocol: TCP
+          volumeMounts:
+          - mountPath: "/data"
+            name: "redis-data"
+          resources:
+{{ toYaml .Values.redis.resources | indent 12 }}
+      volumes:
+      - name: "redis-data"
+        persistentVolumeClaim:
+          claimName: {{ if .Values.redis.persistence.existingClaim }}{{ .Values.redis.persistence.existingClaim }}{{- else }}{{ template "anime-metadata-cache.fullname" . }}-redis-data{{- end }}
+    {{- with .Values.redis.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.redis.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.redis.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.securityContext }}
+      securityContext:
+{{ toYaml . | indent 8 }}
+    {{- end }}

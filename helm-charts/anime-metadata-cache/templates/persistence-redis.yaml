@@ -1,0 +1,18 @@
+{{- if .Values.redis.persistence.existingClaim | not -}}
+kind: PersistentVolumeClaim
+apiVersion: v1
+metadata:
+  name: '{{ include "anime-metadata-cache.fullname" . }}-redis-data'
+  labels:
+    app: {{ include "anime-metadata-cache.name" . }}
+    component: redis
+    chart: {{ include "anime-metadata-cache.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  accessModes:
+    - {{ .Values.redis.persistence.accessMode | quote }}
+  resources:
+    requests:
+      storage: {{ .Values.redis.persistence.size | quote }}
+{{- end }}

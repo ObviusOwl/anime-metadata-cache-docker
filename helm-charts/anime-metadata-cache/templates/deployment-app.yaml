@@ -1,0 +1,69 @@
+apiVersion: apps/v1beta2
+kind: Deployment
+metadata:
+  name: '{{ include "anime-metadata-cache.fullname" . }}-app'
+  labels:
+    app: {{ include "anime-metadata-cache.name" . }}
+    component: app
+    chart: {{ include "anime-metadata-cache.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: {{ include "anime-metadata-cache.name" . }}
+      component: app
+      release: {{ .Release.Name }}
+  template:
+    metadata:
+      labels:
+        app: {{ include "anime-metadata-cache.name" . }}
+        component: app
+        release: {{ .Release.Name }}
+    spec:
+      containers:
+        - name: "{{ .Chart.Name }}-app"
+          image: "{{ .Values.app.image.repository }}:{{ .Values.app.image.tag }}"
+          imagePullPolicy: {{ .Values.app.image.pullPolicy }}
+          env:
+            - name: REDIS_HOST
+              value: '{{ include "anime-metadata-cache.fullname" . }}-redis'
+            - name: REDIS_PORT
+              value: "6379"
+            - name: MYSQL_USER
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "anime-metadata-cache.fullname" . }}
+                  key: "mysql-user"
+            - name: MYSQL_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ include "anime-metadata-cache.fullname" . }}
+                  key: "mysql-password"
+            - name: APP_BASE_URL
+              value: "{{ .Values.app.config.base_url }}"
+            - name: MYSQL_HOST
+              value: "{{ .Values.app.config.mysql.host }}"
+            - name: MYSQL_PORT
+              value: "{{ .Values.app.config.mysql.port }}"
+            - name: MYSQL_DBNAME
+              value: "{{ .Values.app.config.mysql.dbname }}"
+          ports:
+            - name: http
+              containerPort: 8080
+              protocol: TCP
+          resources:
+{{ toYaml .Values.app.resources | indent 12 }}
+    {{- with .Values.app.nodeSelector }}
+      nodeSelector:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.app.affinity }}
+      affinity:
+{{ toYaml . | indent 8 }}
+    {{- end }}
+    {{- with .Values.app.tolerations }}
+      tolerations:
+{{ toYaml . | indent 8 }}
+    {{- end }}

@@ -1,0 +1,21 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: '{{ include "anime-metadata-cache.fullname" . }}-redis'
+  labels:
+    app: {{ include "anime-metadata-cache.name" . }}
+    component: redis
+    chart: {{ include "anime-metadata-cache.chart" . }}
+    release: {{ .Release.Name }}
+    heritage: {{ .Release.Service }}
+spec:
+  type: ClusterIP
+  ports:
+    - port: 6379
+      targetPort: redis
+      protocol: TCP
+      name: redis
+  selector:
+    app: {{ include "anime-metadata-cache.name" . }}
+    component: redis
+    release: {{ .Release.Name }}
